@@ -1,6 +1,9 @@
 package matrix
 
-func getRow[T Number](ch chan []T, rowA []T, B Matrix[T]) {
+import "sync"
+
+func getRow[T Number](ch chan []T, rowA []T, B Matrix[T], wg *sync.WaitGroup) {
+	defer wg.Done()
 	newRow := make([]T, B.Shape()[1])
 	for j := 0; j < B.Shape()[1]; j++ {
 		var tmp T
@@ -43,9 +46,23 @@ func MultiplyParallel[T Number](A Matrix[T], B Matrix[T]) Matrix[T] {
 	for i := 0; i < A.Shape()[0]; i++ {
 		C[i] = make([]T, B.Shape()[1])
 	}
+	var wg sync.WaitGroup
 
 	for i := 0; i < A.Shape()[0]; i++ {
-		go getRow(rowChannel, A[i], B)
+		wg.Add(1)
+		go getRow(rowChannel, A[i], B, &wg)
+	}
+
+	go func() {
+		wg.Wait()
+		close(rowChannel)
+	}()
+
+loopFinal:
+	for i := 0; ; i++ {
+		if rowChannel == nil {
+			break loopFinal
+		}
 		C[i] = <-rowChannel
 	}
 	return C

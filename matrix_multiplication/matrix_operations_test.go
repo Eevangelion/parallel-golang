@@ -6,13 +6,14 @@ import (
 )
 
 type multiplyTest[T Number] struct {
-	A   Matrix[T]
-	B   Matrix[T]
-	err bool
+	A          Matrix[T]
+	B          Matrix[T]
+	err        bool
+	errMessage string
 }
 
 var multiplyIntTests = []multiplyTest[int]{
-	multiplyTest[int]{
+	{
 		Matrix[int]{
 			{1, 2, 3},
 			{4, 5, 6},
@@ -24,8 +25,9 @@ var multiplyIntTests = []multiplyTest[int]{
 			{3},
 		},
 		false,
+		"Incorrect answer!",
 	},
-	multiplyTest[int]{
+	{
 		Matrix[int]{
 			{1, 2, 3},
 			{4, 5, 6},
@@ -33,11 +35,12 @@ var multiplyIntTests = []multiplyTest[int]{
 		},
 		Matrix[int]{{5}},
 		true,
+		"Should have panicked because of incorrect shapes of matrices!",
 	},
 }
 
 var multiplyFloatTests = []multiplyTest[float64]{
-	multiplyTest[float64]{
+	{
 		Matrix[float64]{
 			{0.733, 5.354, 3.989},
 			{4.123, 5.963, 12.352},
@@ -49,6 +52,7 @@ var multiplyFloatTests = []multiplyTest[float64]{
 			{9.432, 2.228, 8.765},
 		},
 		false,
+		"Incorrect answer!",
 	},
 }
 
@@ -56,7 +60,7 @@ func TestMultiplyParallel(t *testing.T) {
 	for num, test := range multiplyIntTests {
 		defer func() {
 			if r := recover(); !test.err && r == nil {
-				t.Errorf(fmt.Sprintf("Test %d failed! Should have panicked!", num))
+				t.Errorf(fmt.Sprintf("Test %d failed! "+test.errMessage, num))
 			}
 		}()
 		result := MultiplyParallel(test.A, test.B)
@@ -68,13 +72,13 @@ func TestMultiplyParallel(t *testing.T) {
 			}
 		}
 		if !ok {
-			t.Errorf(fmt.Sprintf("Test %d failed! Result matrices are not the same!", num))
+			t.Errorf(fmt.Sprintf("Test %d failed! "+test.errMessage, num))
 		}
 	}
 	for num, test := range multiplyFloatTests {
 		defer func() {
 			if r := recover(); !test.err && r == nil {
-				t.Errorf(fmt.Sprintf("Test %d failed! Should have panicked!", num))
+				t.Errorf(fmt.Sprintf("Test %d failed! "+test.errMessage, num))
 			}
 		}()
 		result := MultiplyParallel(test.A, test.B)
@@ -86,7 +90,7 @@ func TestMultiplyParallel(t *testing.T) {
 			}
 		}
 		if !ok {
-			t.Errorf(fmt.Sprintf("Test %d failed! Result matrices are not the same!", num))
+			t.Errorf(fmt.Sprintf("Test %d failed! "+test.errMessage, num))
 		}
 	}
 }
