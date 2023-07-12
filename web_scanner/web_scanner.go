@@ -1,8 +1,9 @@
 package webscanner
 
 import (
+	"bytes"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -16,73 +17,30 @@ func IsURL(str string) bool {
 	return err == nil && u.Scheme != "" && u.Host != ""
 }
 
-func getNumberOfCharacters(url string, ch chan URLInfo, wg *sync.WaitGroup) {
-	defer wg.Done()
-	if IsURL(url) == false {
-		return
-	}
-
-	r, err := http.Get(url)
-	if err != nil {
-		return
-	}
-	defer r.Body.Close()
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return
-	}
-	s := string(body)
-
-	rdr := strings.NewReader(s)
-	z := html.NewTokenizer(rdr)
-	prevStartToken := z.Token()
-
-	res := URLInfo{url, 0}
-
-loopCountChars:
-	for {
-		tt := z.Next()
-
-		switch {
-		case tt == html.ErrorToken:
-			break loopCountChars
-		case tt == html.StartTagToken:
-			prevStartToken = z.Token()
-		case tt == html.TextToken:
-			if prevStartToken.Data == "script" || prevStartToken.Data == "style" {
-				continue
-			}
-			txt := strings.TrimSpace(html.UnescapeString(string(z.Text())))
-			res.NumOfCharacters += len(txt)
-		}
-	}
-	ch <- res
-	return
-}
-
-func ScanURL(link string) ([]URLInfo, error) {
+func ScanURL(link string) (result URLInfo, err error) {
 	if IsURL(link) == false {
-		return []URLInfo{}, errors.New("Incorrect URL!")
+		result = URLInfo{}
+		err = errors.New("Incorrect URL!")
+		return
 	}
 	r, err := http.Get(link)
 	if err != nil {
-		return []URLInfo{}, err
+		result = URLInfo{}
+		return
 	}
 	defer r.Body.Close()
-	body, err := ioutil.ReadAll(r.Body)
+	buffer := &bytes.Buffer{}
+	_, err = io.Copy(buffer, r.Body)
 	if err != nil {
-		return []URLInfo{}, err
+		result = URLInfo{}
+		return
 	}
-	s := string(body)
+	s := buffer.String()
 
 	rdr := strings.NewReader(s)
 	z := html.NewTokenizer(rdr)
 
-	result := []URLInfo{}
-
-	var wg sync.WaitGroup
-
-	ch := make(chan URLInfo)
+	count := 0
 
 loopSearchForAnchors:
 	for {
@@ -97,24 +55,29 @@ loopSearchForAnchors:
 			if token.Data == "a" {
 				for _, a := range token.Attr {
 					if a.Key == "href" {
-						wg.Add(1)
-						go getNumberOfCharacters(a.Val, ch, &wg)
+						count += 1
 					}
 				}
 			}
 		}
 	}
+	result = URLInfo{link, count}
+	return
+}
 
-	go func() {
-		wg.Wait()
-		close(ch)
-	}()
-
-	for data := range ch {
-		if data.NumOfCharacters > 0 {
-			result = append(result, data)
-		}
+func ScanURLS(urls []string) (r URLInfos, e error) {
+	var wg sync.WaitGroup
+	for _, url := range urls {
+		wg.Add(1)
+		go func(url string) {
+			defer wg.Done()
+			uInfo, err := ScanURL(url)
+			if err != nil {
+				e = err
+			}
+			r = append(r, uInfo)
+		}(url)
 	}
-
-	return result, nil
+	wg.Wait()
+	return r, e
 }

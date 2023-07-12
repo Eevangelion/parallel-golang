@@ -1,8 +1,8 @@
 package webscanner
 
 type URLInfo struct {
-	Url             string
-	NumOfCharacters int
+	Url        string
+	NumOfLinks int
 }
 
 type URLInfos []URLInfo
