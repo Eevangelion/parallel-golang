@@ -1,0 +1,18 @@
+[TEST] 2023/07/17 17:47:54 Testing started
+[TEST] 2023/07/17 17:47:54 Start testing GetUrlByDocsDataType function
+[TEST] 2023/07/17 17:47:54 Start testing FetchData function
+[TEST] 2023/07/17 17:47:54 Test 1 started
+[Extract Data] 2023/07/17 17:47:54 URL created: https://the-one-api.dev/v2/character?page=1&limit=1
+[Extract Data] 2023/07/17 17:47:54 Request created
+[Extract Data] 2023/07/17 17:47:55 Request completed
+[Extract Data] 2023/07/17 17:47:55 JSON parsed
+[Extract Data] 2023/07/17 17:47:55 Data has written to channel
+[TEST] 2023/07/17 17:47:55 Test 1 finished
+[TEST] 2023/07/17 17:47:55 Test 2 started
+[Extract Data] 2023/07/17 17:47:55 URL created: https://the-one-api.dev/v2/character?page=8&limit=3
+[Extract Data] 2023/07/17 17:47:55 Request created
+[Extract Data] 2023/07/17 17:47:55 Request completed
+[Extract Data] 2023/07/17 17:47:55 JSON parsed
+[Extract Data] 2023/07/17 17:47:55 Data has written to channel
+[TEST] 2023/07/17 17:47:55 Test 2 finished
+[TEST] 2023/07/17 17:47:55 Testing finished with code 0
